@@ -1,17 +1,8 @@
-# ═══════════════════════════════════════════════════════════════
 #  KALKULATOR GEODEZYJNY
 #  Politechnika Morska w Szczecinie | Geoinformatyka | PiG
 #  Autorzy: [I.I. 1], [J.D. 2], [S.K. 3]
-# ═══════════════════════════════════════════════════════════════
-#URUCHOMIENIE apki i lokalnego hosta venv
-#Lokalnie:
-#1. Zainstaluj biblioteki: `pip install -r requirements.txt`
-#2. Uruchom: `streamlit run app.py`
-#3.\venv\Scripts\Activate.ps1
-#4. Otwórz przeglądarkę: `localhost:8501`
-#Na telefonie (ta sama sieć Wi-Fi):**
-#Wpisz adres IP komputera zamiast `localhost`.
 
+#import bibliotek
 import streamlit as st
 import math
 import numpy as np
@@ -19,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+# funkcjonalności kalkulatora
 OPCJE = [
     "Odległość między punktami",
     "Azymut kierunku",
@@ -28,21 +20,18 @@ OPCJE = [
     "Wcięcie kątowe w przód"
 ]
 
-# ── Konfiguracja strony ──────────────────────────────────────
+# Konfiguracja strony
 st.set_page_config(
     page_title="Kalkulator Geodezyjny",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# ── Style CSS ────────────────────────────────────────────────
+# konfiguracja stylów (CSS)
 
 st.markdown("""
 <style>
-
-/* ───────── OGÓLNE ───────── */
 .main { padding-top: 0.5rem; }
-
 h1 {
     font-size: 1.6rem !important;
     margin-bottom: 0 !important;
@@ -58,20 +47,17 @@ h3 {
     margin: 0.4rem 0 0.2rem 0 !important;
 }
 
-/* ───────── PRZYCISKI ───────── */
 .stButton > button {
     border-radius: 8px;
     font-weight: 600;
     font-size: 1rem;
 }
 
-/* ───────── ALERT – BAZA (tylko wygląd kontenera!) ───────── */
 div[data-testid="stAlert"] {
     border-radius: 10px !important;
     padding: 0.4rem 0.6rem !important;
 }
 
-/* ───────── SUCCESS (wyniki) ───────── */
 div[data-testid="stAlert"][kind="success"] p:first-child {
     font-size: 0.95rem !important;
     color: #94a3b8 !important;
@@ -86,45 +72,38 @@ div[data-testid="stAlert"][kind="success"] p:last-child {
     margin: 0 !important;
 }
 
-/* fallback gdy użyjesz ### */
 div[data-testid="stAlert"][kind="success"] h3 {
     font-size: 1.7rem !important;
     text-align: center !important;
     margin: 0 !important;
 }
 
-/* ───────── INFO (hinty / pomoc) ───────── */
 div[data-testid="stAlert"][kind="info"] p {
     font-size: 0.85rem !important;
     color: #94a3b8 !important;
     text-align: center !important;
 }
 
-/* ───────── ERROR ───────── */
 div[data-testid="stAlert"][kind="error"] p {
     font-size: 1rem !important;
     text-align: center !important;
     font-weight: 500;
 }
 
-/* ───────── CAPTION ───────── */
 .stCaption {
     font-size: 0.85rem !important;
     line-height: 1.2 !important;
     margin-bottom: 0 !important;
 }
 
-/* ───────── WYKRESY ───────── */
 .stPyplot {
     display: flex;
     justify-content: center;
 }
 
-/* ───────── LISTY ───────── */
 ul { margin-top: 0 !important; }
 li { margin-bottom: 0.05rem !important; }
 
-/* ───────── KATEX ───────── */
 .katex-display {
     margin: 0.4em 0 !important;
 }
@@ -132,9 +111,8 @@ li { margin-bottom: 0.05rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
+#--------------------------------
 # FUNKCJE
-# ═══════════════════════════════════════════════════════════════
 
 def odleglosc(
     x1: float,
@@ -231,23 +209,19 @@ def wciecie_liniowe(
     if dA + dB < dAB or abs(dA - dB) > dAB:
         raise ValueError("Odległości nie tworzą trójkąta - brak przecięcia okręgów.")
 
-    # 1. Obliczamy kąt alfa przy punkcie A z twierdzenia cosinusów
     cos_alfa = (dA**2 + dAB**2 - dB**2) / (2 * dA * dAB)
-    cos_alfa = max(-1.0, min(1.0, cos_alfa)) # Zabezpieczenie przed błędami float
+    cos_alfa = max(-1.0, min(1.0, cos_alfa))
     alfa = math.acos(cos_alfa)
 
-    # 2. Obliczamy azymut bazy AB
     az_AB = math.atan2(yB - yA, xB - xA) # Zwraca kąt w radianach
 
     rozw = []
-    # 3. Wyznaczamy dwa rozwiązania: lewe i prawe względem bazy
-    # Dodajemy i odejmujemy kąt alfa od azymutu bazy
+
     for znak in [1, -1]:
         kat_P = az_AB + (znak * alfa)
         xP = xA + dA * math.cos(kat_P)
         yP = yA + dA * math.sin(kat_P)
         rozw.append((xP, yP))
-        
     return rozw
 
 def dms(
@@ -270,7 +244,6 @@ def wciecie_katowe_wprzod(
     alfa = math.radians(alfa_deg)
     beta = math.radians(beta_deg)
 
-    # zabezpieczenia
     if abs(math.tan(alfa)) < 1e-12 or abs(math.tan(beta)) < 1e-12:
         raise ValueError("Kąt bliski 0° – niepoprawna geometria.")
 
@@ -286,9 +259,9 @@ def wciecie_katowe_wprzod(
 
     return Xp, Yp
 
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJE DO INSTRUKCJI
-# ═══════════════════════════════════════════════════════════════
+# --------------------------
+# opis/instrukcja dla użytkowników kalkulatora
+
 def instrukcja_odleglosc():
     st.markdown("""
 Wyznaczenie odległości między dwoma punktami w układzie prostokątnym.
@@ -421,30 +394,25 @@ $$ Y_P = \\frac{-X_A + Y_A \\cdot \\cot\\beta + X_B + Y_B \\cdot \\cot\\alpha}{\
 szczególnie dla małych przecięć kierunków.
 """)
     
-# ═══════════════════════════════════════════════════════════════
-# WYKRESY
-# ═══════════════════════════════════════════════════════════════
+# -------------------------------------------
+# rysowanie wykresów
 
 def rysuj_azymut(x1, y1, x2, y2, az_deg):
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.set_facecolor("#ffffff")
     
-    # 1. Obliczanie zakresu
     dx, dy = y2 - y1, x2 - x1
     dlugosc = math.sqrt(dx**2 + dy**2)
     mid_y, mid_x = (y1 + y2) / 2, (x1 + x2) / 2
     
-    # Stabilny margines - nie pozwalamy mu urosnąć za bardzo
     view_margin = max(min(dlugosc * 0.4, 30.0), 10.0) 
     
     ax.set_xlim(min(y1, y2) - view_margin, max(y1, y2) + view_margin)
     ax.set_ylim(min(x1, x2) - view_margin, max(x1, x2) + view_margin)
     ax.set_aspect('equal', adjustable='box')
 
-    # 2. Linia kierunku - stały rozmiar kropki
     ax.plot([y1, y2], [x1, x2], color="#1d4ed8", marker="o", lw=1.5, ms=5, zorder=10)
 
-    # 3. Strzałka Północy - stała długość (np. 15 metrów lub mniej jeśli odcinek krótki)
     n_len = min(view_margin * 0.7, 15.0)
     ax.annotate("", xy=(y1, x1 + n_len), xytext=(y1, x1),
                 arrowprops=dict(arrowstyle="-|>, head_length=0.5, head_width=0.25", 
@@ -453,8 +421,6 @@ def rysuj_azymut(x1, y1, x2, y2, az_deg):
     ax.text(y1, x1 + n_len + (view_margin * 0.05), "N", 
             color="red", fontsize=9, ha="center", fontweight="bold")
 
-    # 4. Łuk azymutu - STAŁY PROMIEŃ (niezależny od długości P1-P2)
-    # Ustawiamy promień na sztywno (np. 8-10 metrów), chyba że odcinek jest bardzo krótki
     r_arc = min(dlugosc * 0.4, 10.0)
     
     arc = mpatches.Arc((y1, x1), 2*r_arc, 2*r_arc, angle=0,
@@ -463,15 +429,13 @@ def rysuj_azymut(x1, y1, x2, y2, az_deg):
                     color="#16a34a", lw=1.8, zorder=12)
     ax.add_patch(arc)
 
-    # 5. Wartość kąta - blisko łuku
     angle_rad = math.radians(90 - az_deg / 2)
-    # Stałe przesunięcie tekstu od środka łuku
+
     tx = y1 + (r_arc + 3.0) * math.cos(angle_rad)
     ty = x1 + (r_arc + 3.0) * math.sin(angle_rad)
     az_g_label = az_deg / 0.9 
     ax.text(tx, ty, f"{az_g_label:.2f}ᵍ", color="#16a34a", fontsize=9, fontweight="bold", ha="center", va="center")
 
-    # 6. Etykiety punktów
     ax.text(y1, x1 - (view_margin * 0.1), "P1", fontsize=10, fontweight="bold", ha="center", va="top")
     ax.text(y2, x2 + (view_margin * 0.1), "P2", fontsize=10, fontweight="bold", ha="center")
 
@@ -521,7 +485,6 @@ def rysuj_wielobok(punkty):
     xs = [p[0] for p in punkty]
     margin = max(max(xs) - min(xs), max(ys) - min(ys)) * 0.10
 
-    # zamknięty wielobok
     xs_closed = xs + [xs[0]]
     ys_closed = ys + [ys[0]]
     ax.fill(ys_closed, xs_closed, alpha=0.25, color="#719ce2")
@@ -557,7 +520,6 @@ def rysuj_transformacje(x0, y0, dx, dy, az_g=None):
     x1 = x0 + dx
     y1 = y0 + dy
 
-    # ── 1. WYZNACZENIE ZAKRESU ──
     xmin = min(x0, x1)
     xmax = max(x0, x1)
     ymin = min(y0, y1)
@@ -577,19 +539,16 @@ def rysuj_transformacje(x0, y0, dx, dy, az_g=None):
     ax.set_ylim(cy - half, cy + half)
     ax.set_aspect('equal')
 
-    # ── 2. STYL ───────────────────────────────────────────
     ax.set_xlabel("Y [m]", fontsize=9)
     ax.set_ylabel("X [m]", fontsize=9)
     ax.tick_params(labelsize=8)
 
-    # punkty
     ax.plot(y0, x0, 'ko', ms=4)
     ax.text(y0, x0, "P0", fontsize=8, ha="right", va="top")
 
     ax.plot(y1, x1, 'ro', ms=4)
     ax.text(y1, x1, "P2", fontsize=8, ha="left", va="bottom")
 
-    # ── 3. WEKTOR (lepszy niż arrow → annotate) ───────────
     ax.annotate(
         "",
         xy=(y1, x1),
@@ -602,11 +561,9 @@ def rysuj_transformacje(x0, y0, dx, dy, az_g=None):
         )
     )
 
-    # linie pomocnicze
     ax.axhline(x0, ls="--", alpha=0.2, lw=0.8)
     ax.axvline(y0, ls="--", alpha=0.2, lw=0.8)
 
-    # łuk (opcjonalnie)
     if az_g is not None:
         r = size * 0.15
         arc = mpatches.Arc(
@@ -628,7 +585,6 @@ def rysuj_wciecie_katowe_wprzod(xA, yA, xB, yB, alfa_deg, beta_deg, Xp, Yp):
     ax.set_facecolor("#f8fafc")
     ax.set_aspect('equal', adjustable='datalim')
 
-    # ── styl etykiet ─────────────────────────
     bbox_style = dict(
         boxstyle="round,pad=0.25",
         fc="white",
@@ -636,18 +592,11 @@ def rysuj_wciecie_katowe_wprzod(xA, yA, xB, yB, alfa_deg, beta_deg, Xp, Yp):
         alpha=0.9
     )
 
-    # ── baza A-B ─────────────────────────────
     ax.plot([yA, yB], [xA, xB], "k-o", lw=1.5, ms=5, zorder=5)
-
-    # ── punkt P ──────────────────────────────
     ax.plot(Yp, Xp, "o", color="#16a34a", ms=6, zorder=10)
-
-    # ── linie celowe ─────────────────────────
     ax.plot([yA, Yp], [xA, Xp], color="#1d4ed8", lw=1.6)
     ax.plot([yB, Yp], [xB, Xp], color="#9333ea", lw=1.6)
 
-    # ── etykiety punktów ─────────────────────
-    # ── środek układu (do odsuwania etykiet) ──
     cx = (xA + xB + Xp) / 3
     cy = (yA + yB + Yp) / 3
 
@@ -661,31 +610,21 @@ def rysuj_wciecie_katowe_wprzod(xA, yA, xB, yB, alfa_deg, beta_deg, Xp, Yp):
         dy /= length
         return y + dx * scale, x + dy * scale
 
-
-    # ── etykiety ─────────────────────
     yA_off, xA_off = offset_point(xA, yA)
     ax.text(yA_off, xA_off, "A", fontsize=10, fontweight="bold", ha="center", va="center", bbox=bbox_style)
-
     yB_off, xB_off = offset_point(xB, yB)
     ax.text(yB_off, xB_off, "B", fontsize=10, fontweight="bold", ha="center", va="center", bbox=bbox_style)
-
     yP_off, xP_off = offset_point(Xp, Yp)
     ax.text(yP_off, xP_off, f"P\nX:{Xp:.2f}\nY:{Yp:.2f}", fontsize=9, fontweight="bold", color="#16a34a",
                 ha="center", va="center", bbox=bbox_style)
 
-
-    # ── etykiety kątów (odsunięte dodatkowo) ──
     yA_ang, xA_ang = offset_point(xA, yA, scale=2.0)
     ax.text(yA_ang, xA_ang, f"α={alfa_deg:.1f}°", color="#1d4ed8", fontsize=9, ha="center", bbox=bbox_style)
-
     yB_ang, xB_ang = offset_point(xB, yB, scale=2.0)
     ax.text(yB_ang, xB_ang, f"β={beta_deg:.1f}°", color="#9333ea", fontsize=9, ha="center", bbox=bbox_style)
 
-    # ── autoskalowanie ───────────────────────
     ax.relim()
     ax.autoscale_view()
-
-    # ── osie i siatka ────────────────────────
     ax.set_xlabel("Y [m]")
     ax.set_ylabel("X [m]")
     ax.grid(True, alpha=0.2)
@@ -693,9 +632,8 @@ def rysuj_wciecie_katowe_wprzod(xA, yA, xB, yB, alfa_deg, beta_deg, Xp, Yp):
     fig.tight_layout()
     return fig
 
-# ═══════════════════════════════════════════════════════════════
-# NAGŁÓWEK APLIKACJI
-# ═══════════════════════════════════════════════════════════════
+# ------------------------------------------------------
+# nagłówek kalkulatora
 
 st.title("Kalkulator Geodezyjny TEST1")
 st.caption("Politechnika Morska w Szczecinie | Geoinformatyka | PiG | 2026")
@@ -703,7 +641,6 @@ st.caption("Autorzy: [I.I. 1], [J.D. 2], [S.K. 3]")
 
 st.divider()
 
-# ─── Wybór funkcji ────────────────────────────────────────────
 if "funkcja" not in st.session_state:
     st.session_state.funkcja = OPCJE[0]
 
@@ -717,9 +654,9 @@ for i, opcja in enumerate(OPCJE):
 
 funkcja = st.session_state.funkcja
 
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 1 – ODLEGŁOŚĆ
-# ═══════════════════════════════════════════════════════════════
+# ------------------------------------------------------
+# funkcja nr 1 – Odległość między punktami
+
 if funkcja.startswith("Odległość między punktami"):
     st.subheader("📏 Odległość między punktami")
 
@@ -763,12 +700,10 @@ if funkcja.startswith("Odległość między punktami"):
         key="oblicz_odleglosc"
     ):
 
-        # ── OBLICZENIA ───────────────────────
         d = odleglosc(x1, y1, x2, y2)
         dx = abs(x2 - x1)
         dy = abs(y2 - y1)
 
-        # ── WYNIKI ───────────────────────────
         st.success(f"Odległość = {d:.3f} m")
 
         c1, c2 = st.columns(2)
@@ -776,7 +711,6 @@ if funkcja.startswith("Odległość między punktami"):
         c1.success(f"Przyrost ΔX:\n{dx:.3f} m")
         c2.success(f"Przyrost ΔY:\n{dy:.3f} m")
 
-        # ── RAPORT TXT ──────────────────────
         raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -801,7 +735,7 @@ Przyrost ΔX = {dx:.3f} m
 Przyrost ΔY = {dy:.3f} m
 """
 
-        # ── PRZYCISK POBIERANIA ─────────────
+        # przycisk pobierz
         st.download_button(
             label="💾 Zapisz wyniki TXT",
             data=raport_txt,
@@ -811,12 +745,8 @@ Przyrost ΔY = {dy:.3f} m
             key="download_odleglosc"
         )
 
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 2 – AZYMUT
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 2 – AZYMUT
-# ═══════════════════════════════════════════════════════════════
+# ------------------------------------------------------
+# funkcja nr 2 – Azymut
 
 elif funkcja.startswith("Azymut kierunku"):
     st.subheader("🧭 Azymut kierunku")
@@ -858,21 +788,17 @@ elif funkcja.startswith("Azymut kierunku"):
     ):
 
         try:
-            # ── OBLICZENIA ─────────────────────
             az_g = azymut(x1, y1, x2, y2)
             d = odleglosc(x1, y1, x2, y2)
 
-            # grad → stopnie
+            # grady → stopnie
             az_deg = az_g * 0.9
 
-            # ── WYNIKI ─────────────────────────
             c1, c2, c3 = st.columns(3)
-
             c1.success(f"Grady:\n{az_g:.4f}")
             c2.success(f"Stopnie:\n{az_deg:.2f}")
             c3.success(f"Odległość:\n{d:.3f} m")
 
-            # ── RAPORT TXT ─────────────────────
             raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -897,7 +823,6 @@ Azymut = {az_deg:.2f} °
 Odległość = {d:.3f} m
 """
 
-            # ── PRZYCISK POBIERANIA ────────────
             st.download_button(
                 label="💾 Zapisz wyniki TXT",
                 data=raport_txt,
@@ -907,23 +832,17 @@ Odległość = {d:.3f} m
                 key="download_azymut"
             )
 
-            # ── WYKRES ─────────────────────────
             with st.expander("Prezentacja graficzna", expanded=False):
                 fig = rysuj_azymut(x1, y1, x2, y2, az_deg)
                 st.pyplot(fig, use_container_width=False)
 
         except ValueError as e:
             st.error(str(e))
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 3 – POLE WIELOBOKU
-# ═══════════════════════════════════════════════════════════════
 
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 3 – POLE WIELOBOKU
-# ═══════════════════════════════════════════════════════════════
+# ------------------------------------------------------
+# funkcja nr 3 – pole wieloboku
 
 elif funkcja.startswith("Pole powierzchni wieloboku"):
-
     st.subheader("📐 Pole powierzchni wieloboku")
 
     with st.expander("Instrukcja"):
@@ -970,7 +889,6 @@ elif funkcja.startswith("Pole powierzchni wieloboku"):
 
     c1, c2 = st.columns(2)
 
-    # ── PRZYCISK PRZYKŁAD ───────────────────
     if c1.button(
         "Wczytaj przykład",
         use_container_width=True,
@@ -984,7 +902,6 @@ elif funkcja.startswith("Pole powierzchni wieloboku"):
 
         st.rerun()
 
-    # ── PRZYCISK WYCZYŚĆ ───────────────────
     if c2.button(
         "Wyczyść",
         use_container_width=True,
@@ -998,7 +915,6 @@ elif funkcja.startswith("Pole powierzchni wieloboku"):
 
         st.rerun()
 
-    # ── OBLICZENIA ─────────────────────────
     if st.button(
         "Oblicz pole",
         type="primary",
@@ -1017,14 +933,12 @@ elif funkcja.startswith("Pole powierzchni wieloboku"):
 
                 p = pole_gaussa(pts)
 
-                # ── WYNIKI ─────────────────────
                 c1, c2, c3 = st.columns(3)
 
                 c1.success(f"Pole:\n {p:.2f} m²")
                 c2.success(f"Pole:\n {p/10000:.4f} ha")
                 c3.success(f"Liczba pkt.:\n {len(pts)}")
 
-                # ── RAPORT TXT ─────────────────
                 raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -1041,7 +955,6 @@ Pole = {p:.2f} m²
 Pole = {p/10000:.4f} ha
 """
 
-                # ── POBIERANIE TXT ────────────
                 st.download_button(
                     label="💾 Zapisz wyniki TXT",
                     data=raport_txt,
@@ -1051,7 +964,6 @@ Pole = {p/10000:.4f} ha
                     key="download_pole"
                 )
 
-                # ── WYKRES ────────────────────
                 with st.expander("Prezentacja graficzna"):
 
                     st.pyplot(
@@ -1060,15 +972,11 @@ Pole = {p/10000:.4f} ha
 
         except Exception:
             st.error("Błąd danych. Sprawdź współrzędne.")
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 4 – TRANSFORMACJA BIEGUNOWE ↔ PROSTOKĄTNE
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 4 – TRANSFORMACJA BIEGUNOWE ↔ PROSTOKĄTNE
-# ═══════════════════════════════════════════════════════════════
+            
+# ------------------------------------------------------
+# funkcja nr 4 – transforamacja: biegunowe/prostokątne
 
 elif funkcja.startswith("Transformacja biegunowe"):
-
     st.subheader("🔁 Transformacja biegunowe ↔ prostokątne")
 
     with st.expander("Instrukcja"):
@@ -1088,7 +996,6 @@ elif funkcja.startswith("Transformacja biegunowe"):
         key="checkbox_transformacja"
     )
 
-    # ── PUNKT POCZĄTKOWY ────────────────────
     if use_start:
 
         c1, c2 = st.columns(2)
@@ -1110,9 +1017,9 @@ elif funkcja.startswith("Transformacja biegunowe"):
 
     st.divider()
 
-    # ════════════════════════════════════════
-    # PRZYPADEK 1 — BIEGUNOWE → PROSTOKĄTNE
-    # ════════════════════════════════════════
+    # -------
+    # biegunowe -> prostokątne
+
     if tryb.startswith("Biegunowe → Prostokątne"):
 
         c1, c2 = st.columns(2)
@@ -1144,7 +1051,6 @@ elif funkcja.startswith("Transformacja biegunowe"):
                     y0=y0
                 )
 
-                # ── WYNIKI ───────────────────
                 c1, c2 = st.columns(2)
 
                 c1.success(
@@ -1169,7 +1075,6 @@ elif funkcja.startswith("Transformacja biegunowe"):
                         f"Współrzędna Y₂:\n{res['Y2']:.3f} m"
                     )
 
-                # ── RAPORT TXT ───────────────
                 raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -1209,7 +1114,6 @@ X2 = {res['X2']:.3f} m
 Y2 = {res['Y2']:.3f} m
 """
 
-                # ── POBIERANIE TXT ──────────
                 st.download_button(
                     label="💾 Zapisz wyniki TXT",
                     data=raport_txt,
@@ -1219,7 +1123,6 @@ Y2 = {res['Y2']:.3f} m
                     key="download_transformacja_1"
                 )
 
-                # ── WYKRES ──────────────────
                 if x0 is not None and y0 is not None:
 
                     with st.expander("Prezentacja graficzna"):
@@ -1241,9 +1144,9 @@ Y2 = {res['Y2']:.3f} m
             except ValueError as e:
                 st.error(str(e))
 
-    # ════════════════════════════════════════
-    # PRZYPADEK 2 — PROSTOKĄTNE → BIEGUNOWE
-    # ════════════════════════════════════════
+    # -------
+    # prostokątne-> biegunowe
+    
     else:
 
         c1, c2 = st.columns(2)
@@ -1275,7 +1178,6 @@ Y2 = {res['Y2']:.3f} m
                     y0=y0
                 )
 
-                # ── WYNIKI ───────────────────
                 c1, c2 = st.columns(2)
 
                 c1.success(
@@ -1300,7 +1202,6 @@ Y2 = {res['Y2']:.3f} m
                         f"Współrzędna Y₂:\n{res['Y2']:.3f} m"
                     )
 
-                # ── RAPORT TXT ───────────────
                 raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -1340,7 +1241,6 @@ X2 = {res['X2']:.3f} m
 Y2 = {res['Y2']:.3f} m
 """
 
-                # ── POBIERANIE TXT ──────────
                 st.download_button(
                     label="💾 Zapisz wyniki TXT",
                     data=raport_txt,
@@ -1350,7 +1250,6 @@ Y2 = {res['Y2']:.3f} m
                     key="download_transformacja_2"
                 )
 
-                # ── WYKRES ──────────────────
                 if x0 is not None and y0 is not None:
 
                     with st.expander("Prezentacja graficzna"):
@@ -1371,15 +1270,11 @@ Y2 = {res['Y2']:.3f} m
 
             except ValueError as e:
                 st.error(str(e))
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 5 – WCIĘCIE KĄTOWE W PRZÓD
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 5 – WCIĘCIE KĄTOWE W PRZÓD
-# ═══════════════════════════════════════════════════════════════
+
+# ------------------------------------------------------
+# funkcja nr 5 – wcięcie kątowe w przód
 
 elif funkcja.startswith("Wcięcie kątowe w przód"):
-
     st.subheader("📐 Wcięcie kątowe w przód")
 
     with st.expander("Instrukcja"):
@@ -1387,7 +1282,6 @@ elif funkcja.startswith("Wcięcie kątowe w przód"):
 
     colA, colB = st.columns(2)
 
-    # ── PUNKT A ─────────────────────────────
     with colA:
 
         st.markdown("**Punkt A**")
@@ -1412,7 +1306,6 @@ elif funkcja.startswith("Wcięcie kątowe w przód"):
             key="alfa"
         )
 
-    # ── PUNKT B ─────────────────────────────
     with colB:
 
         st.markdown("**Punkt B**")
@@ -1437,7 +1330,6 @@ elif funkcja.startswith("Wcięcie kątowe w przód"):
             key="beta"
         )
 
-    # ── PRZYCISK OBLICZ ────────────────────
     if st.button(
         "Oblicz",
         type="primary",
@@ -1455,7 +1347,6 @@ elif funkcja.startswith("Wcięcie kątowe w przód"):
                 )
 
             else:
-                # ── OBLICZENIA ───────────────
                 Xp, Yp = wciecie_katowe_wprzod(
                     xA,
                     yA,
@@ -1465,12 +1356,10 @@ elif funkcja.startswith("Wcięcie kątowe w przód"):
                     beta
                 )
 
-                # ── WYNIKI ───────────────────
                 st.success(
                     f"P: X = {Xp:.3f} m, Y = {Yp:.3f} m"
                 )
 
-                # ── RAPORT TXT ───────────────
                 raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -1500,7 +1389,6 @@ XP = {Xp:.3f} m
 YP = {Yp:.3f} m
 """
 
-                # ── POBIERANIE TXT ──────────
                 st.download_button(
                     label="💾 Zapisz wyniki TXT",
                     data=raport_txt,
@@ -1510,7 +1398,6 @@ YP = {Yp:.3f} m
                     key="download_wciecie_katowe"
                 )
 
-                # ── WYKRES ──────────────────
                 with st.expander(
                     "Prezentacja graficzna"
                 ):
@@ -1530,12 +1417,9 @@ YP = {Yp:.3f} m
 
         except ValueError as e:
             st.error(str(e))
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 6 – WCIĘCIE LINIOWE
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════
-# FUNKCJA 6 – WCIĘCIE LINIOWE
-# ═══════════════════════════════════════════════════════════════
+            
+# ------------------------------------------------------
+# funkcja nr 6 – wcięcie liniowe
 
 elif funkcja.startswith("Wcięcie liniowe"):
 
@@ -1546,7 +1430,6 @@ elif funkcja.startswith("Wcięcie liniowe"):
 
     c1, c2 = st.columns(2)
 
-    # ── DANE WEJŚCIOWE ─────────────────────
     xA = c1.number_input(
         "XA [m]",
         value=0.0,
@@ -1595,7 +1478,6 @@ elif funkcja.startswith("Wcięcie liniowe"):
         key="dB_liniowe"
     )
 
-    # ── PRZYCISK OBLICZ ────────────────────
     if st.button(
         "Oblicz",
         type="primary",
@@ -1604,7 +1486,6 @@ elif funkcja.startswith("Wcięcie liniowe"):
     ):
 
         try:
-            # ── OBLICZENIA ───────────────────
             rozw = wciecie_liniowe(
                 xA,
                 yA,
@@ -1614,7 +1495,6 @@ elif funkcja.startswith("Wcięcie liniowe"):
                 dB
             )
 
-            # ── WYNIKI ───────────────────────
             st.success(
                 f"Rozwiązanie 1:  X = {rozw[0][0]:.4f} m,  Y = {rozw[0][1]:.4f} m"
             )
@@ -1627,7 +1507,6 @@ elif funkcja.startswith("Wcięcie liniowe"):
                 "Wybierz rozwiązanie zgodne z lokalizacją punktu w terenie."
             )
 
-            # ── RAPORT TXT ───────────────────
             raport_txt = f"""
 KALKULATOR GEODEZYJNY
 =====================
@@ -1661,7 +1540,6 @@ X = {rozw[1][0]:.4f} m
 Y = {rozw[1][1]:.4f} m
 """
 
-            # ── POBIERANIE TXT ──────────────
             st.download_button(
                 label="💾 Zapisz wyniki TXT",
                 data=raport_txt,
@@ -1671,7 +1549,6 @@ Y = {rozw[1][1]:.4f} m
                 key="download_wciecie_liniowe"
             )
 
-            # ── WYKRES ──────────────────────
             with st.expander(
                 "Prezentacja graficzna"
             ):
